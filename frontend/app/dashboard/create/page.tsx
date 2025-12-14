@@ -1,14 +1,7 @@
-/**
- * 🎯 VIDEO CREATION PAGE - VIRAL ENGINE PRO
- * Built: December 13, 2025
- * Company: RJ Business Solutions
- */
-
 'use client'
 
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { ArrowLeft, Wand2, Download, Share2, Eye } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -16,163 +9,260 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import Link from 'next/link'
-import { ALL_TEMPLATES, getTemplatesByCategory } from '@/lib/templates/all-templates'
+import { Progress } from '@/components/ui/progress'
+import { Badge } from '@/components/ui/badge'
+import { 
+  Sparkles, Zap, TrendingUp, Video, Upload, Wand2, 
+  Play, Download, Share2, Eye, Clock, CheckCircle 
+} from 'lucide-react'
+import { viralTemplates } from '@/lib/templates/viral-templates-complete'
+
+interface VideoGenerationState {
+  step: number
+  template?: any
+  script?: string
+  voiceType?: string
+  platform?: string
+  status?: 'idle' | 'generating' | 'complete' | 'error'
+  progress?: number
+  videoUrl?: string
+}
 
 export default function CreateVideoPage() {
-  const [step, setStep] = useState<'template' | 'customize' | 'generate' | 'preview'>('template')
-  const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null)
-  const [category, setCategory] = useState<string>('all')
-  const [generating, setGenerating] = useState(false)
+  const [state, setState] = useState<VideoGenerationState>({ step: 1, status: 'idle', progress: 0 })
+  const [customScript, setCustomScript] = useState('')
+  const [selectedCategory, setSelectedCategory] = useState('all')
 
-  const filteredTemplates = category === 'all' 
-    ? ALL_TEMPLATES 
-    : getTemplatesByCategory(category)
+  const categories = ['all', 'finance', 'personal-development', 'tech-ai', 'business', 'health', 'entertainment']
+  
+  const filteredTemplates = selectedCategory === 'all' 
+    ? viralTemplates 
+    : viralTemplates.filter(t => t.category === selectedCategory)
 
-  const handleGenerate = async () => {
-    setGenerating(true)
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 3000))
-    setGenerating(false)
-    setStep('preview')
+  const handleTemplateSelect = (template: any) => {
+    setState({ ...state, template, step: 2 })
+  }
+
+  const generateVideo = async () => {
+    setState({ ...state, status: 'generating', progress: 0 })
+
+    // Simulate video generation with progress
+    const progressInterval = setInterval(() => {
+      setState(prev => {
+        const newProgress = Math.min((prev.progress || 0) + 10, 90)
+        return { ...prev, progress: newProgress }
+      })
+    }, 500)
+
+    try {
+      // TODO: Call actual API
+      const response = await fetch('/api/videos/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          template_id: state.template?.id,
+          script: customScript || state.template?.script,
+          voice_type: state.voiceType || 'male-professional',
+          platform: state.platform || 'tiktok'
+        })
+      })
+
+      const data = await response.json()
+      
+      clearInterval(progressInterval)
+      setState({ 
+        ...state, 
+        status: 'complete', 
+        progress: 100, 
+        videoUrl: data.video_url,
+        step: 4 
+      })
+    } catch (error) {
+      clearInterval(progressInterval)
+      setState({ ...state, status: 'error', progress: 0 })
+    }
   }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-950 via-purple-950 to-gray-950 p-8">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center space-x-4">
-            <Link href="/dashboard">
-              <Button variant="ghost" size="icon">
-                <ArrowLeft className="w-5 h-5" />
-              </Button>
-            </Link>
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-8"
+        >
+          <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-black text-white">Create Viral Video</h1>
-              <p className="text-gray-400">Choose a template and customize your content</p>
+              <h1 className="text-4xl font-black text-white mb-2 flex items-center gap-3">
+                <Sparkles className="w-10 h-10 text-pink-500" />
+                Create Viral Video
+              </h1>
+              <p className="text-gray-400">Transform templates into viral content in minutes</p>
             </div>
+            <Badge variant="outline" className="text-cyan-400 border-cyan-400">
+              Step {state.step} of 4
+            </Badge>
           </div>
-          
-          <div className="flex items-center space-x-2">
-            {step === 'preview' && (
-              <>
-                <Button variant="outline" className="border-gray-700">
-                  <Eye className="mr-2 w-4 h-4" />
-                  Preview
-                </Button>
-                <Button variant="outline" className="border-gray-700">
-                  <Download className="mr-2 w-4 h-4" />
-                  Download
-                </Button>
-                <Button className="bg-gradient-to-r from-purple-600 to-pink-600">
-                  <Share2 className="mr-2 w-4 h-4" />
-                  Publish
-                </Button>
-              </>
-            )}
-          </div>
-        </div>
+        </motion.div>
 
-        {/* Progress Steps */}
-        <div className="flex items-center justify-center mb-8">
-          <div className="flex items-center space-x-4">
-            {['template', 'customize', 'generate', 'preview'].map((s, index) => (
-              <div key={s} className="flex items-center">
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${
-                  step === s 
-                    ? 'bg-purple-600 text-white' 
-                    : ['template', 'customize', 'generate'].indexOf(step) > index
-                    ? 'bg-green-600 text-white'
-                    : 'bg-gray-700 text-gray-400'
-                }`}>
-                  {index + 1}
-                </div>
-                {index < 3 && (
-                  <div className={`w-16 h-1 ${
-                    ['template', 'customize', 'generate'].indexOf(step) > index
-                      ? 'bg-green-600'
-                      : 'bg-gray-700'
-                  }`} />
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
+        {/* Progress Bar */}
+        <Progress value={(state.step / 4) * 100} className="mb-8 h-2" />
 
         {/* Step 1: Template Selection */}
-        {step === 'template' && (
+        {state.step === 1 && (
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
           >
-            <Card className="bg-gray-900/50 border-gray-800">
+            <Card className="bg-gray-900/50 border-gray-800 backdrop-blur-xl">
               <CardHeader>
-                <CardTitle className="text-white">Choose a Template</CardTitle>
-                <CardDescription>Select from 150+ proven viral templates</CardDescription>
+                <CardTitle className="text-white flex items-center gap-2">
+                  <Video className="w-6 h-6 text-cyan-400" />
+                  Choose Your Template
+                </CardTitle>
+                <CardDescription>
+                  Select a proven viral template or start from scratch
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 {/* Category Filter */}
-                <div className="mb-6">
-                  <Label className="text-white mb-2">Category</Label>
-                  <Select value={category} onValueChange={setCategory}>
-                    <SelectTrigger className="bg-gray-800 border-gray-700 text-white">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Templates</SelectItem>
-                      <SelectItem value="motivational">Motivational</SelectItem>
-                      <SelectItem value="money">Wealth & Money</SelectItem>
-                      <SelectItem value="business">Business</SelectItem>
-                      <SelectItem value="selfImprovement">Self-Improvement</SelectItem>
-                      <SelectItem value="relationships">Relationships</SelectItem>
-                      <SelectItem value="fitness">Fitness</SelectItem>
-                      <SelectItem value="lifestyle">Lifestyle</SelectItem>
-                      <SelectItem value="tech">Tech & AI</SelectItem>
-                      <SelectItem value="storytelling">Storytelling</SelectItem>
-                      <SelectItem value="educational">Educational</SelectItem>
-                    </SelectContent>
-                  </Select>
+                <div className="flex gap-2 mb-6 overflow-x-auto">
+                  {categories.map(cat => (
+                    <Button
+                      key={cat}
+                      variant={selectedCategory === cat ? 'default' : 'outline'}
+                      onClick={() => setSelectedCategory(cat)}
+                      className="capitalize"
+                    >
+                      {cat.replace('-', ' ')}
+                    </Button>
+                  ))}
                 </div>
 
                 {/* Template Grid */}
-                <div className="grid md:grid-cols-3 gap-6">
-                  {filteredTemplates.slice(0, 9).map((template) => (
+                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {filteredTemplates.slice(0, 12).map(template => (
                     <motion.div
                       key={template.id}
-                      whileHover={{ scale: 1.05 }}
-                      className={`cursor-pointer p-6 rounded-xl border-2 transition-all ${
-                        selectedTemplate === template.id
-                          ? 'border-purple-500 bg-purple-500/20'
-                          : 'border-gray-700 bg-gray-800/50 hover:border-purple-500/50'
-                      }`}
-                      onClick={() => setSelectedTemplate(template.id)}
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={() => handleTemplateSelect(template)}
+                      className="cursor-pointer"
                     >
-                      <div className="flex items-center justify-between mb-3">
-                        <span className="text-xs font-semibold text-purple-400 uppercase">
-                          {template.category}
-                        </span>
-                        <div className="flex items-center space-x-1">
-                          <span className="text-yellow-400 text-xs">⚡</span>
-                          <span className="text-white text-xs font-bold">{template.viralScore}</span>
-                        </div>
-                      </div>
-                      <h3 className="text-white font-bold text-lg mb-2">{template.name}</h3>
-                      <p className="text-gray-400 text-sm mb-4">{template.description}</p>
-                      <div className="text-xs text-gray-500">
-                        {template.duration}s • {template.targetPlatforms.join(', ')}
-                      </div>
+                      <Card className="bg-gray-800/50 border-gray-700 hover:border-cyan-500 transition-colors h-full">
+                        <CardHeader>
+                          <div className="flex items-start justify-between mb-2">
+                            <Badge className="bg-gradient-to-r from-cyan-500 to-pink-500">
+                              {template.viralScore}% Viral Score
+                            </Badge>
+                            <Badge variant="outline" className="text-xs">
+                              {template.category}
+                            </Badge>
+                          </div>
+                          <CardTitle className="text-white text-lg">
+                            {template.name}
+                          </CardTitle>
+                          <CardDescription className="text-sm line-clamp-2">
+                            {template.hook}
+                          </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="flex items-center gap-2 text-sm text-gray-400">
+                            <Clock className="w-4 h-4" />
+                            {template.length}
+                            <Eye className="w-4 h-4 ml-2" />
+                            {template.avgViews}
+                          </div>
+                        </CardContent>
+                      </Card>
                     </motion.div>
                   ))}
                 </div>
 
-                <div className="mt-6 flex justify-end">
+                <Button 
+                  variant="outline" 
+                  className="w-full mt-6"
+                  onClick={() => setState({ ...state, step: 2, template: { custom: true } })}
+                >
+                  <Wand2 className="w-4 h-4 mr-2" />
+                  Start From Scratch
+                </Button>
+              </CardContent>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* Step 2: Script Customization */}
+        {state.step === 2 && (
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+          >
+            <Card className="bg-gray-900/50 border-gray-800 backdrop-blur-xl">
+              <CardHeader>
+                <CardTitle className="text-white flex items-center gap-2">
+                  <Wand2 className="w-6 h-6 text-pink-500" />
+                  Customize Your Script
+                </CardTitle>
+                <CardDescription>
+                  Edit the viral template or write your own
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Selected Template Info */}
+                {state.template && !state.template.custom && (
+                  <div className="bg-gradient-to-r from-cyan-500/10 to-pink-500/10 rounded-lg p-4 border border-cyan-500/20">
+                    <h3 className="text-white font-bold mb-2">{state.template.name}</h3>
+                    <p className="text-gray-300 text-sm mb-3">{state.template.hook}</p>
+                    <div className="flex gap-2">
+                      <Badge className="bg-cyan-500">
+                        {state.template.viralScore}% Viral Score
+                      </Badge>
+                      <Badge variant="outline">{state.template.category}</Badge>
+                    </div>
+                  </div>
+                )}
+
+                {/* Script Editor */}
+                <div>
+                  <Label className="text-white mb-2 block">Video Script</Label>
+                  <Textarea
+                    placeholder="Write or paste your script here..."
+                    value={customScript || state.template?.script || ''}
+                    onChange={(e) => setCustomScript(e.target.value)}
+                    rows={15}
+                    className="bg-gray-800/50 border-gray-700 text-white"
+                  />
+                  <p className="text-sm text-gray-400 mt-2">
+                    Character count: {(customScript || state.template?.script || '').length}
+                  </p>
+                </div>
+
+                {/* AI Script Generator */}
+                <div className="flex gap-2">
+                  <Button variant="outline" className="flex-1">
+                    <Sparkles className="w-4 h-4 mr-2" />
+                    AI Enhance Script
+                  </Button>
+                  <Button variant="outline" className="flex-1">
+                    <Zap className="w-4 h-4 mr-2" />
+                    Add Viral Hook
+                  </Button>
+                </div>
+
+                <div className="flex gap-3">
                   <Button 
-                    disabled={!selectedTemplate}
-                    onClick={() => setStep('customize')}
-                    className="bg-gradient-to-r from-purple-600 to-pink-600"
+                    variant="outline" 
+                    onClick={() => setState({ ...state, step: 1 })}
                   >
-                    Continue to Customize
+                    Back
+                  </Button>
+                  <Button 
+                    className="flex-1 bg-gradient-to-r from-cyan-500 to-pink-500"
+                    onClick={() => setState({ ...state, step: 3 })}
+                  >
+                    Continue
                   </Button>
                 </div>
               </CardContent>
@@ -180,272 +270,224 @@ export default function CreateVideoPage() {
           </motion.div>
         )}
 
-        {/* Step 2: Customize */}
-        {step === 'customize' && (
+        {/* Step 3: Video Settings */}
+        {state.step === 3 && (
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
           >
-            <div className="grid md:grid-cols-2 gap-6">
-              <Card className="bg-gray-900/50 border-gray-800">
-                <CardHeader>
-                  <CardTitle className="text-white">Content Settings</CardTitle>
-                  <CardDescription>Customize your video content</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <Label className="text-white">Topic/Idea (Optional)</Label>
-                    <Input 
-                      placeholder="e.g., How to make passive income" 
-                      className="bg-gray-800 border-gray-700 text-white"
-                    />
+            <Card className="bg-gray-900/50 border-gray-800 backdrop-blur-xl">
+              <CardHeader>
+                <CardTitle className="text-white flex items-center gap-2">
+                  <TrendingUp className="w-6 h-6 text-pink-500" />
+                  Video Settings
+                </CardTitle>
+                <CardDescription>
+                  Configure voice, platform, and style
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Platform Selection */}
+                <div>
+                  <Label className="text-white mb-3 block">Target Platform</Label>
+                  <div className="grid grid-cols-3 gap-3">
+                    {['tiktok', 'youtube-shorts', 'instagram-reels'].map(platform => (
+                      <Button
+                        key={platform}
+                        variant={state.platform === platform ? 'default' : 'outline'}
+                        onClick={() => setState({ ...state, platform })}
+                        className="h-20 flex flex-col gap-1"
+                      >
+                        <Video className="w-6 h-6" />
+                        <span className="capitalize text-sm">
+                          {platform.replace('-', ' ')}
+                        </span>
+                      </Button>
+                    ))}
                   </div>
+                </div>
 
-                  <div>
-                    <Label className="text-white">Target Audience</Label>
-                    <Select defaultValue="general">
-                      <SelectTrigger className="bg-gray-800 border-gray-700 text-white">
+                {/* Voice Selection */}
+                <div>
+                  <Label className="text-white mb-2 block">Voice Type</Label>
+                  <Select 
+                    value={state.voiceType} 
+                    onValueChange={(value) => setState({ ...state, voiceType: value })}
+                  >
+                    <SelectTrigger className="bg-gray-800/50 border-gray-700 text-white">
+                      <SelectValue placeholder="Select voice type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="male-professional">Male - Professional</SelectItem>
+                      <SelectItem value="female-energetic">Female - Energetic</SelectItem>
+                      <SelectItem value="male-deep">Male - Deep Voice</SelectItem>
+                      <SelectItem value="female-calm">Female - Calm</SelectItem>
+                      <SelectItem value="ai-narrator">AI Narrator</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Background Style */}
+                <div>
+                  <Label className="text-white mb-2 block">Background Style</Label>
+                  <div className="grid grid-cols-2 gap-3">
+                    {['Dynamic Gradient', 'Gaming', 'Nature', 'Abstract'].map(style => (
+                      <Button
+                        key={style}
+                        variant="outline"
+                        className="h-16"
+                      >
+                        {style}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Caption Settings */}
+                <Tabs defaultValue="style" className="w-full">
+                  <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="style">Caption Style</TabsTrigger>
+                    <TabsTrigger value="effects">Effects</TabsTrigger>
+                  </TabsList>
+                  <TabsContent value="style" className="space-y-3">
+                    <Select defaultValue="bold">
+                      <SelectTrigger className="bg-gray-800/50 border-gray-700 text-white">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="general">General</SelectItem>
-                        <SelectItem value="entrepreneurs">Entrepreneurs</SelectItem>
-                        <SelectItem value="students">Students</SelectItem>
-                        <SelectItem value="professionals">Professionals</SelectItem>
+                        <SelectItem value="bold">Bold Impact</SelectItem>
+                        <SelectItem value="minimal">Minimal Clean</SelectItem>
+                        <SelectItem value="neon">Neon Glow</SelectItem>
+                        <SelectItem value="classic">Classic Subtitle</SelectItem>
                       </SelectContent>
                     </Select>
-                  </div>
-
-                  <div>
-                    <Label className="text-white">Tone/Style</Label>
-                    <Select defaultValue="motivational">
-                      <SelectTrigger className="bg-gray-800 border-gray-700 text-white">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="motivational">Motivational</SelectItem>
-                        <SelectItem value="educational">Educational</SelectItem>
-                        <SelectItem value="entertaining">Entertaining</SelectItem>
-                        <SelectItem value="inspiring">Inspiring</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div>
-                    <Label className="text-white">Custom Script (Optional)</Label>
-                    <Textarea 
-                      placeholder="Leave blank for AI-generated script"
-                      rows={6}
-                      className="bg-gray-800 border-gray-700 text-white"
-                    />
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-gray-900/50 border-gray-800">
-                <CardHeader>
-                  <CardTitle className="text-white">Visual Settings</CardTitle>
-                  <CardDescription>Customize the look and feel</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <Label className="text-white">Video Duration</Label>
-                    <Select defaultValue="45">
-                      <SelectTrigger className="bg-gray-800 border-gray-700 text-white">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="30">30 seconds</SelectItem>
-                        <SelectItem value="45">45 seconds</SelectItem>
-                        <SelectItem value="60">60 seconds</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div>
-                    <Label className="text-white">Caption Style</Label>
-                    <Select defaultValue="default">
-                      <SelectTrigger className="bg-gray-800 border-gray-700 text-white">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="default">Default (Word Pop)</SelectItem>
-                        <SelectItem value="typewriter">Typewriter</SelectItem>
-                        <SelectItem value="bounce">Bounce</SelectItem>
-                        <SelectItem value="fade">Fade In</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div>
-                    <Label className="text-white">Music Style</Label>
-                    <Select defaultValue="epic">
-                      <SelectTrigger className="bg-gray-800 border-gray-700 text-white">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="epic">Epic Motivational</SelectItem>
-                        <SelectItem value="upbeat">Upbeat Inspiring</SelectItem>
-                        <SelectItem value="dramatic">Dramatic Emotional</SelectItem>
-                        <SelectItem value="chill">Chill Beats</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div>
-                    <Label className="text-white">Platform</Label>
-                    <Select defaultValue="tiktok">
-                      <SelectTrigger className="bg-gray-800 border-gray-700 text-white">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="tiktok">TikTok (9:16)</SelectItem>
-                        <SelectItem value="instagram">Instagram Reels (9:16)</SelectItem>
-                        <SelectItem value="youtube">YouTube Shorts (9:16)</SelectItem>
-                        <SelectItem value="all">All Platforms</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            <div className="mt-6 flex justify-between">
-              <Button variant="outline" onClick={() => setStep('template')}>
-                Back
-              </Button>
-              <Button 
-                onClick={() => setStep('generate')}
-                className="bg-gradient-to-r from-purple-600 to-pink-600"
-              >
-                Continue to Generate
-              </Button>
-            </div>
-          </motion.div>
-        )}
-
-        {/* Step 3: Generate */}
-        {step === 'generate' && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="flex items-center justify-center min-h-[400px]"
-          >
-            <Card className="bg-gray-900/50 border-gray-800 w-full max-w-2xl">
-              <CardContent className="p-12 text-center">
-                {!generating ? (
-                  <>
-                    <Wand2 className="w-16 h-16 text-purple-500 mx-auto mb-4" />
-                    <h2 className="text-2xl font-bold text-white mb-4">Ready to Generate</h2>
-                    <p className="text-gray-400 mb-8">
-                      Your video will be generated using AI. This usually takes 30-60 seconds.
-                    </p>
-                    <Button 
-                      size="lg"
-                      onClick={handleGenerate}
-                      className="bg-gradient-to-r from-purple-600 to-pink-600"
-                    >
-                      <Wand2 className="mr-2" />
-                      Generate Video
-                    </Button>
-                  </>
-                ) : (
-                  <>
-                    <div className="w-16 h-16 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-                    <h2 className="text-2xl font-bold text-white mb-4">Generating Your Video...</h2>
-                    <p className="text-gray-400 mb-4">
-                      AI is creating your viral masterpiece. Hang tight!
-                    </p>
-                    <div className="space-y-2 text-left max-w-md mx-auto">
-                      <div className="flex items-center space-x-2">
-                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                        <span className="text-gray-400">✓ Script generated</span>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                        <span className="text-gray-400">✓ Visuals rendered</span>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <div className="w-2 h-2 bg-yellow-500 rounded-full animate-pulse"></div>
-                        <span className="text-gray-400">⏳ Adding captions...</span>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <div className="w-2 h-2 bg-gray-500 rounded-full"></div>
-                        <span className="text-gray-600">⏳ Finalizing video...</span>
-                      </div>
+                  </TabsContent>
+                  <TabsContent value="effects" className="space-y-3">
+                    <div className="flex gap-2">
+                      <Button variant="outline" size="sm" className="flex-1">
+                        <Zap className="w-3 h-3 mr-1" /> Zoom Effect
+                      </Button>
+                      <Button variant="outline" size="sm" className="flex-1">
+                        <Sparkles className="w-3 h-3 mr-1" /> Particle Burst
+                      </Button>
                     </div>
-                  </>
-                )}
+                  </TabsContent>
+                </Tabs>
+
+                <div className="flex gap-3">
+                  <Button 
+                    variant="outline" 
+                    onClick={() => setState({ ...state, step: 2 })}
+                  >
+                    Back
+                  </Button>
+                  <Button 
+                    className="flex-1 bg-gradient-to-r from-cyan-500 to-pink-500"
+                    onClick={generateVideo}
+                  >
+                    <Sparkles className="w-4 h-4 mr-2" />
+                    Generate Video
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           </motion.div>
         )}
 
-        {/* Step 4: Preview */}
-        {step === 'preview' && (
+        {/* Step 4: Generation & Download */}
+        {state.step === 4 && (
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
           >
-            <div className="grid md:grid-cols-3 gap-6">
-              <div className="md:col-span-2">
-                <Card className="bg-gray-900/50 border-gray-800">
-                  <CardContent className="p-6">
-                    <div className="aspect-[9/16] max-w-sm mx-auto bg-gradient-to-br from-purple-900 to-pink-900 rounded-2xl flex items-center justify-center">
-                      <div className="text-center">
-                        <Eye className="w-16 h-16 text-white opacity-50 mx-auto mb-4" />
-                        <p className="text-white opacity-50">Video Preview</p>
+            <Card className="bg-gray-900/50 border-gray-800 backdrop-blur-xl">
+              <CardHeader>
+                <CardTitle className="text-white flex items-center gap-2">
+                  {state.status === 'generating' && (
+                    <>
+                      <motion.div
+                        animate={{ rotate: 360 }}
+                        transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
+                      >
+                        <Sparkles className="w-6 h-6 text-cyan-400" />
+                      </motion.div>
+                      Generating Your Viral Video...
+                    </>
+                  )}
+                  {state.status === 'complete' && (
+                    <>
+                      <CheckCircle className="w-6 h-6 text-green-500" />
+                      Video Ready!
+                    </>
+                  )}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {state.status === 'generating' && (
+                  <>
+                    <Progress value={state.progress} className="h-3" />
+                    <p className="text-center text-gray-400">
+                      {state.progress}% - Processing your video with AI...
+                    </p>
+                  </>
+                )}
+
+                {state.status === 'complete' && (
+                  <>
+                    {/* Video Preview */}
+                    <div className="bg-black rounded-lg aspect-[9/16] max-w-md mx-auto relative overflow-hidden">
+                      <video 
+                        src={state.videoUrl} 
+                        controls 
+                        className="w-full h-full object-contain"
+                      />
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="grid grid-cols-2 gap-3">
+                      <Button className="bg-gradient-to-r from-cyan-500 to-blue-500">
+                        <Download className="w-4 h-4 mr-2" />
+                        Download
+                      </Button>
+                      <Button variant="outline">
+                        <Share2 className="w-4 h-4 mr-2" />
+                        Share to Socials
+                      </Button>
+                    </div>
+
+                    {/* Stats */}
+                    <div className="grid grid-cols-3 gap-4 text-center">
+                      <div className="bg-gray-800/50 rounded-lg p-4">
+                        <p className="text-2xl font-bold text-cyan-400">
+                          {state.template?.viralScore || 92}%
+                        </p>
+                        <p className="text-sm text-gray-400">Viral Score</p>
+                      </div>
+                      <div className="bg-gray-800/50 rounded-lg p-4">
+                        <p className="text-2xl font-bold text-pink-400">
+                          {state.template?.avgViews || '500K+'}
+                        </p>
+                        <p className="text-sm text-gray-400">Est. Views</p>
+                      </div>
+                      <div className="bg-gray-800/50 rounded-lg p-4">
+                        <p className="text-2xl font-bold text-purple-400">
+                          {state.template?.avgEngagement || '8.5%'}
+                        </p>
+                        <p className="text-sm text-gray-400">Engagement</p>
                       </div>
                     </div>
-                  </CardContent>
-                </Card>
-              </div>
 
-              <div className="space-y-6">
-                <Card className="bg-gray-900/50 border-gray-800">
-                  <CardHeader>
-                    <CardTitle className="text-white">Video Details</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-gray-400">Duration:</span>
-                      <span className="text-white font-semibold">45 seconds</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-400">Resolution:</span>
-                      <span className="text-white font-semibold">1080x1920</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-400">Format:</span>
-                      <span className="text-white font-semibold">MP4</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-400">File Size:</span>
-                      <span className="text-white font-semibold">12.4 MB</span>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card className="bg-gray-900/50 border-gray-800">
-                  <CardHeader>
-                    <CardTitle className="text-white">Export Options</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <Button className="w-full bg-gradient-to-r from-purple-600 to-pink-600">
-                      <Download className="mr-2 w-4 h-4" />
-                      Download HD
+                    <Button 
+                      variant="outline" 
+                      className="w-full"
+                      onClick={() => setState({ step: 1, status: 'idle', progress: 0 })}
+                    >
+                      Create Another Video
                     </Button>
-                    <Button variant="outline" className="w-full border-gray-700">
-                      <Share2 className="mr-2 w-4 h-4" />
-                      Schedule Post
-                    </Button>
-                    <Button variant="outline" className="w-full border-gray-700">
-                      Generate Another
-                    </Button>
-                  </CardContent>
-                </Card>
-              </div>
-            </div>
+                  </>
+                )}
+              </CardContent>
+            </Card>
           </motion.div>
         )}
       </div>
